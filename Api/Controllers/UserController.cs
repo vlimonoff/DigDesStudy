@@ -15,13 +15,20 @@ namespace Api
     public class UserController : ControllerBase
     {
         private readonly UserService _userService;
+
         public UserController(UserService userService)
         {
             _userService = userService;
         }
 
         [HttpPost]
-        public async Task CreateUser(CreateUserModel model) => await _userService.CreateUser(model);
+        public async Task CreateUser(CreateUserModel model)
+        {
+            if (await _userService.CheckUserExists(model.Email))
+                throw new Exception("user is exists");
+            var t = await _userService.CreateUser(model);
+
+        }
 
         [HttpGet]
         [Authorize]

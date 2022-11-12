@@ -14,6 +14,8 @@ namespace Api
                 ;
 
             CreateMap<DAL.Entities.User, Models.UserModel>();
+
+            CreateMap<DAL.Entities.Avatar, Models.AttachModel>();
         }
     }
 }

@@ -1,17 +1,16 @@
-﻿using Api.Models;
-using Api.Services;
-using AutoMapper;
-using AutoMapper.QueryableExtensions;
-using DAL;
+﻿using Api.Services;
+using Common.Extentions;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using Common.Consts;
+using Api.Models.User;
+using Api.Models.Attach;
 
 namespace Api
 {
     [Route("api/[controller]/[action]")]
     [ApiController]
+    [Authorize]
     public class UserController : ControllerBase
     {
         private readonly UserService _userService;
@@ -19,23 +18,19 @@ namespace Api
         public UserController(UserService userService)
         {
             _userService = userService;
+            if (userService != null)
+                _userService.SetLinkGenerator(x => Url.Action(nameof(GetUserAvatar), new
+                {
+                    userId = x.Id,
+                    download = false
+                }));
         }
 
         [HttpPost]
-        public async Task CreateUser(CreateUserModel model)
-        {
-            if (await _userService.CheckUserExists(model.Email))
-                throw new Exception("user is exists");
-            var t = await _userService.CreateUser(model);
-
-        }
-
-        [HttpPost]
-        [Authorize]
         public async Task AddAvatarToUser(MetadataModel model)
         {
-            var userIdString = User.Claims.FirstOrDefault(x => x.Type == "id")?.Value;
-            if (Guid.TryParse(userIdString, out var userId))
+            var userId = User.GetClaimValue<Guid>(ClaimNames.Id);
+            if (userId != default)
             {
                 var tempFi = new FileInfo(Path.Combine(Path.GetTempPath(), model.TempId.ToString()));
                 if(!tempFi.Exists)
@@ -58,42 +53,42 @@ namespace Api
         }
 
         [HttpGet]
-        public async Task<FileResult> GetUserAvatar(Guid userId)
+        [AllowAnonymous]
+        public async Task<FileStreamResult> GetUserAvatar(Guid userId, bool download = false)
         {
             var attach = await _userService.GetUserAvatar(userId);
-            return File(System.IO.File.ReadAllBytes(attach.FilePath), attach.MimeType);
+            var fs = new FileStream(attach.FilePath, FileMode.Open);
+            if (download)
+                return File(fs, attach.MimeType, attach.Name);
+            else
+                return File(fs, attach.MimeType);
         }
 
         [HttpGet]
-        public async Task<FileResult> DownloadAvatar(Guid userId)
+        public async Task<FileStreamResult> GetCurrentUserAvatar(bool download = false)
         {
-            var attach = await _userService.GetUserAvatar(userId);
-            HttpContext.Response.ContentType = attach.MimeType;
-            FileContentResult result = new FileContentResult(System.IO.File.ReadAllBytes(attach.FilePath), attach.MimeType)
+            var userId = User.GetClaimValue<Guid>(ClaimNames.Id);
+            if (userId != default)
             {
-                FileDownloadName = attach.Name
-            };
-
-            return result;
-        }
-   
-        [HttpGet]
-        [Authorize]
-        public async Task<List<UserModel>> GetUsers() => await _userService.GetUsers();
-
-        [HttpGet]
-        [Authorize]
-        public async Task<UserModel> GetCurrentUser()
-        {
-            var userIdString = User.Claims.FirstOrDefault(x => x.Type == "id")?.Value;
-            if (Guid.TryParse(userIdString, out var userId))
-            {
-                return await _userService.GetUser(userId);
+                return await GetUserAvatar(userId, download);
             }
             else
                 throw new Exception("you are not authorized");
-
-            
         }
+
+        [HttpGet]
+        public async Task<IEnumerable<UserAvatarModel>> GetUsers() => await _userService.GetUsers();
+
+
+        [HttpGet]
+        public async Task<UserAvatarModel> GetCurrentUser()
+        {
+            var userId = User.GetClaimValue<Guid>(ClaimNames.Id);
+            if (userId != default)
+                return await _userService.GetUser(userId);
+            else
+                throw new Exception("you are not authorized");
+        }
+        
     }
 }

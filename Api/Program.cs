@@ -1,11 +1,11 @@
 using Api;
 using Api.Services;
 using Api.Configs;
+using Api.Middlewares;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using DAL;
 
 internal class Program
 {
@@ -57,9 +57,11 @@ internal class Program
             options.UseNpgsql(builder.Configuration.GetConnectionString("PostgreSql"), sql => { });
         }, contextLifetime: ServiceLifetime.Scoped);
 
-        builder.Services.AddAutoMapper(typeof(mapperProfile).Assembly);
+        builder.Services.AddAutoMapper(typeof(MapperProfile).Assembly);
 
         builder.Services.AddScoped<UserService>();
+        builder.Services.AddScoped<AuthService>();
+        builder.Services.AddScoped<PostService>();
 
         builder.Services.AddAuthentication(o =>
         {
@@ -89,6 +91,8 @@ internal class Program
                 p.RequireAuthenticatedUser();
             });
         });
+
+
 
         var app = builder.Build();
 

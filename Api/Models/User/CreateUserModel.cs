@@ -1,11 +1,11 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace Api.Models
+namespace Api.Models.User
 {
     public class CreateUserModel
     {
         [Required]
-        public string Name { get; set; } 
+        public string Name { get; set; }
         [Required]
         public string Email { get; set; }
         [Required]
@@ -23,7 +23,7 @@ namespace Api.Models
             Password = password;
             RetryPassword = retryPassword;
             BirthDate = birthDate;
-        }   
+        }
     }
 
 }

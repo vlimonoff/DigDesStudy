@@ -1,4 +1,4 @@
-﻿using Api.Models;
+﻿using Api.Models.Attach;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -39,16 +39,6 @@ namespace Api.Controllers
             }
             else
             {
-                if (fileInfo.Directory == null)
-                {
-                    throw new Exception("temp is null");
-                }
-                else 
-                    if(!fileInfo.Directory.Exists)
-                    {
-                        fileInfo.Directory?.Create();
-                    }
-
                 using (var stream = System.IO.File.Create(newPath)) 
                 {
                     await file.CopyToAsync(stream);

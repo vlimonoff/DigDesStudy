@@ -21,31 +21,17 @@ namespace Api.Controllers
             _postService = postService;
             _postService.SetLinkGenerator(
                 linkAvatarGenerator: x =>
-                    Url.Action(nameof(UserController.GetUserAvatar), "User", new
+                    Url.ControllerAction<AttachController>(nameof(AttachController.GetUserAvatar), new
                     {
                         userId = x.Id,
-                        download = false
                     }),
 
                 linkContentGenerator: x =>
-                    Url.Action(nameof(GetPostContent), new
+                    Url.ControllerAction<AttachController>(nameof(AttachController.GetPostContent), new
                     {
                         postContentId = x.Id,
-                        download = false
                     }
                 ));
-        }
-
-        [HttpGet]
-        [AllowAnonymous]
-        public async Task<FileStreamResult> GetPostContent(Guid postContentId, bool download = false)
-        {
-            var attach = await _postService.GetPostContent(postContentId);
-            var fs = new FileStream(attach.FilePath, FileMode.Open);
-            if (download)
-                return File(fs, attach.MimeType, attach.Name);
-            else
-                return File(fs, attach.MimeType);
         }
 
         [HttpGet]
@@ -54,45 +40,14 @@ namespace Api.Controllers
         [HttpPost]
         public async Task CreatePost(CreatePostRequest request)
         {
-            var userId = User.GetClaimValue<Guid>(ClaimNames.Id);
-            if (userId == default)
+            if (!request.AuthorId.HasValue)
             {
-                throw new Exception("not authorize");
+                var userId = User.GetClaimValue<Guid>(ClaimNames.Id);
+                if (userId == default)
+                    throw new Exception("not authorize");
+                request.AuthorId = userId;
             }
-
-
-            var model = new CreatePostModel
-            {
-                AuthorId = userId,
-                Description = request.Description,
-                Contents = request.Contents.Select(x =>
-                    new MetaWithPath(x, q => Path.Combine(
-                        Directory.GetCurrentDirectory(),
-                        "attaches",
-                        q.TempId.ToString()), userId)).ToList()
-            };
-
-
-            model.Contents.ForEach(x =>
-            {
-                var tempFi = new FileInfo(Path.Combine(Path.GetTempPath(), x.TempId.ToString()));
-                if (tempFi.Exists)
-                {
-                    var destFi = new FileInfo(x.FilePath);
-                    if (destFi.Directory != null && !destFi.Directory.Exists)
-                    {
-                        destFi.Directory.Create();
-                    }
-                    System.IO.File.Copy(tempFi.FullName, x.FilePath, true);
-                    tempFi.Delete();
-                }
-
-            });
-
-            await _postService.CreatePost(model);
-
+            await _postService.CreatePost(request);
         }
     }
-
-
 }

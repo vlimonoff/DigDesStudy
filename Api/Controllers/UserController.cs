@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Common.Consts;
 using Api.Models.User;
 using Api.Models.Attach;
+using Api.Controllers;
 
 namespace Api
 {
@@ -18,11 +19,10 @@ namespace Api
         public UserController(UserService userService)
         {
             _userService = userService;
-            if (userService != null)
-                _userService.SetLinkGenerator(x => Url.Action(nameof(GetUserAvatar), new
+            _userService.SetLinkGenerator(x =>
+                Url.ControllerAction<AttachController>(nameof(AttachController.GetUserAvatar), new
                 {
-                    userId = x.Id,
-                    download = false
+                    userId = x.Id
                 }));
         }
 
@@ -47,30 +47,6 @@ namespace Api
                     System.IO.File.Copy(tempFi.FullName, path, true);
                     await _userService.AddAvatarToUser(userId, model, path);
                 }
-            }
-            else
-                throw new Exception("you are not authorized");
-        }
-
-        [HttpGet]
-        [AllowAnonymous]
-        public async Task<FileStreamResult> GetUserAvatar(Guid userId, bool download = false)
-        {
-            var attach = await _userService.GetUserAvatar(userId);
-            var fs = new FileStream(attach.FilePath, FileMode.Open);
-            if (download)
-                return File(fs, attach.MimeType, attach.Name);
-            else
-                return File(fs, attach.MimeType);
-        }
-
-        [HttpGet]
-        public async Task<FileStreamResult> GetCurrentUserAvatar(bool download = false)
-        {
-            var userId = User.GetClaimValue<Guid>(ClaimNames.Id);
-            if (userId != default)
-            {
-                return await GetUserAvatar(userId, download);
             }
             else
                 throw new Exception("you are not authorized");

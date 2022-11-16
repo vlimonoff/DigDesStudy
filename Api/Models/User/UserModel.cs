@@ -13,6 +13,7 @@ namespace Api.Models.User
     public class UserAvatarModel : UserModel
     {
         public string? AvatarLink { get; set; }
+        /*
         public UserAvatarModel(UserModel model, Func<UserModel, string?>? linkGenerator)
         {
             Id = model.Id;
@@ -21,5 +22,6 @@ namespace Api.Models.User
             BirthDate = model.BirthDate;
             AvatarLink = linkGenerator?.Invoke(model);
         }
+        */
     }
 }

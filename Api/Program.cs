@@ -67,6 +67,7 @@ internal class Program
         builder.Services.AddScoped<AuthService>();
         builder.Services.AddScoped<PostService>();
         builder.Services.AddScoped<LinkGeneratorService>();
+        builder.Services.AddSingleton<DdosGuard>();
 
         builder.Services.AddAuthentication(o =>
         {
@@ -125,7 +126,8 @@ internal class Program
 
         app.UseHttpsRedirection();
 
-        app.UseAuthentication();    
+        app.UseAntiDdosCustom();
+        app.UseAuthentication();
         app.UseAuthorization();
 
         app.UseTokenValidator();

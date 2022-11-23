@@ -1,4 +1,3 @@
-using Api;
 using Api.Services;
 using Api.Configs;
 using Api.Middlewares;
@@ -6,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Api.Mapper;
 
 internal class Program
 {
@@ -50,6 +50,10 @@ internal class Program
                     new List<string>()
                 }
             });
+
+            // Генерация Swagger документа
+            c.SwaggerDoc("Auth", new OpenApiInfo { Title = "Auth" });
+            c.SwaggerDoc("Api", new OpenApiInfo { Title = "Api" });
         });
 
         builder.Services.AddDbContext<DAL.DataContext>(options =>
@@ -62,6 +66,7 @@ internal class Program
         builder.Services.AddScoped<UserService>();
         builder.Services.AddScoped<AuthService>();
         builder.Services.AddScoped<PostService>();
+        builder.Services.AddScoped<LinkGeneratorService>();
 
         builder.Services.AddAuthentication(o =>
         {
@@ -109,7 +114,13 @@ internal class Program
         //if (app.Environment.IsDevelopment())
         {
             app.UseSwagger();
-            app.UseSwaggerUI();
+
+            //Говорим интерфейсу про два EndPoint
+            app.UseSwaggerUI(c =>
+            {
+                c.SwaggerEndpoint("Api/swagger.json", "Api");
+                c.SwaggerEndpoint("Auth/swagger.json", "Auth");
+            });
         }
 
         app.UseHttpsRedirection();
@@ -117,7 +128,8 @@ internal class Program
         app.UseAuthentication();    
         app.UseAuthorization();
 
-        app.UseTokenValidator(); 
+        app.UseTokenValidator();
+        app.UseGlobalErrorWrapper();
 
         app.MapControllers();
 

@@ -1,25 +1,30 @@
-﻿using Api.Models.Attach;
+﻿using Api.Mapper.MapperActions;
+using Api.Models.Attach;
 using Api.Models.Post;
 using Api.Models.User;
 using AutoMapper;
 using Common;
 
-namespace Api
+namespace Api.Mapper
 {
-    public class MapperProfile: Profile
+    public class MapperProfile : Profile
     {
         public MapperProfile()
         {
             CreateMap<CreateUserModel, DAL.Entities.User>()
                 .ForMember(d => d.Id, m => m.MapFrom(s => Guid.NewGuid()))
-                .ForMember(d => d.PasswordHash, m=>m.MapFrom(s=>HashHelper.GetHash(s.Password)))
-                .ForMember(d => d.BirthDate, m=>m.MapFrom(s=>s.BirthDate.UtcDateTime))
+                .ForMember(d => d.PasswordHash, m => m.MapFrom(s => HashHelper.GetHash(s.Password)))
+                .ForMember(d => d.BirthDate, m => m.MapFrom(s => s.BirthDate.UtcDateTime))
                 ;
 
             CreateMap<DAL.Entities.User, UserModel>();
-            CreateMap<DAL.Entities.User, UserAvatarModel>();
+            CreateMap<DAL.Entities.User, UserAvatarModel>()
+                .ForMember(d => d.PostsCount, m => m.MapFrom(s => s.Posts!.Count))
+                .AfterMap<UserAvatarMapperAction>();
             CreateMap<DAL.Entities.Avatar, AttachModel>();
-            CreateMap<DAL.Entities.PostContent, AttachExternalModel>();
+            CreateMap<DAL.Entities.Post, PostModel>()
+                .ForMember(d => d.Contents, m => m.MapFrom(d => d.PostContents));
+            CreateMap<DAL.Entities.PostContent, AttachExternalModel>().AfterMap<PostContentMapperAction>();
             CreateMap<DAL.Entities.PostContent, AttachModel>();
 
             CreateMap<CreatePostRequest, CreatePostModel>();

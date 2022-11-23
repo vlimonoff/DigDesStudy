@@ -6,24 +6,26 @@ using Common.Consts;
 using Api.Models.User;
 using Api.Models.Attach;
 using Api.Controllers;
+using Api.Exceptions;
 
 namespace Api
 {
     [Route("api/[controller]/[action]")]
     [ApiController]
-    [Authorize]
+    //[Authorize]
+    [ApiExplorerSettings(GroupName = "Api")]
     public class UserController : ControllerBase
     {
         private readonly UserService _userService;
 
-        public UserController(UserService userService)
+        public UserController(UserService userService, LinkGeneratorService links)
         {
             _userService = userService;
-            _userService.SetLinkGenerator(x =>
+            links.LinkAvatarGenerator = x =>
                 Url.ControllerAction<AttachController>(nameof(AttachController.GetUserAvatar), new
                 {
                     userId = x.Id
-                }));
+                });
         }
 
         [HttpPost]
@@ -65,6 +67,11 @@ namespace Api
             else
                 throw new Exception("you are not authorized");
         }
-        
+
+        [HttpGet]
+        public async Task<UserAvatarModel> GetUserById(Guid userId)
+        {
+            return await _userService.GetUser(userId);
+        }
     }
 }

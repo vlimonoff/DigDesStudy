@@ -1,4 +1,5 @@
 ﻿using Api.Configs;
+using Api.Exceptions;
 using Api.Models.Attach;
 using Api.Models.Post;
 using Api.Models.User;
@@ -15,14 +16,6 @@ namespace Api.Services
     {
         private readonly IMapper _mapper;
         private readonly DAL.DataContext _context;
-
-        private Func<PostContent, string?>? _linkContentGenerator;
-        private Func<User, string?>? _linkAvatarGenerator;
-        public void SetLinkGenerator(Func<PostContent, string?> linkContentGenerator, Func<User, string?> linkAvatarGenerator)
-        {
-            _linkContentGenerator = linkContentGenerator;
-            _linkAvatarGenerator = linkAvatarGenerator;
-        }
 
         public PostService(IMapper mapper, DataContext context)
         {
@@ -66,28 +59,26 @@ namespace Api.Services
                 .OrderByDescending(x => x.Created)
                 .Skip(skip)
                 .Take(take)
+                .Select(x => _mapper.Map<PostModel>(x))
                 .ToListAsync();
 
-            var res = posts.Select(post => new PostModel
-            {
-                Author = _mapper.Map<User, UserAvatarModel>(post.Author, o => o.AfterMap(FixAvatar)),
-                Description = post.Description,
-                Id = post.Id,
-                Contents = post.PostContents?.Select(x => 
-                _mapper.Map<PostContent, AttachExternalModel>(x, o => o.AfterMap(FixContent))).ToList()
-            }).ToList();
-
-            return res;
+            return posts;
         }
 
-        private void FixAvatar(User s, UserAvatarModel d)
+        public async Task<PostModel> GetPostById(Guid id)
         {
-            d.AvatarLink = s.Avatar == null ? null : _linkAvatarGenerator?.Invoke(s);
-        }
+            var post = await _context.Posts
+                .Include(x => x.Author).ThenInclude(x => x.Avatar)
+                .Include(x => x.PostContents)
+                .AsNoTracking()
+                .Where(x => x.Id == id)
+                .Select(x => _mapper.Map<PostModel>(x))
+                .FirstOrDefaultAsync();
 
-        private void FixContent(PostContent s, AttachExternalModel d)
-        {
-            d.ContentLink = _linkContentGenerator?.Invoke(s);
+            if (post == null)
+                throw new PostNotFoundException();
+
+            return post;
         }
 
         public async Task<AttachModel> GetPostContent(Guid postContentId)

@@ -25,15 +25,16 @@ namespace Api.Services
             {
                 lock(_lock)
                 {
-                    var requests = RequestControlDict.TryGetValue(token, out var request) ? request : 0;
+                    var requests = RequestControlDict.TryGetValue(key, out var t) ? t : 0;
                     if (requests > 10)
                     {
                         throw new TooManyRequestException();
                     }
-                    RequestControlDict.TryUpdate(token, requests, ++requests);
+                    var newRequest = requests + 1;
+                    RequestControlDict.TryUpdate(key, newRequest, requests);
                 }
             }
-            RequestControlDict.TryAdd(token, 0);
+            RequestControlDict.TryAdd(key, 0);
         }
     }
 }

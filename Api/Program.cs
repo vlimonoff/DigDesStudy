@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Api.Mapper;
+using AspNetCoreRateLimit;
 
 internal class Program
 {
@@ -20,7 +21,6 @@ internal class Program
         builder.Services.Configure<AuthConfig>(authSection);
 
         builder.Services.AddControllers();
-        // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen(c =>
         {
@@ -61,13 +61,21 @@ internal class Program
             options.UseNpgsql(builder.Configuration.GetConnectionString("PostgreSql"), sql => { });
         }, contextLifetime: ServiceLifetime.Scoped);
 
+        builder.Services.AddOptions();
+        builder.Services.AddMemoryCache();
+        builder.Services.Configure<ClientRateLimitOptions>(builder.Configuration.GetSection("ClientRateLimiting"));
+        builder.Services.Configure<ClientRateLimitPolicies>(builder.Configuration.GetSection("ClientRateLimitPolicies"));
+        builder.Services.AddInMemoryRateLimiting();
+        builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
+
         builder.Services.AddAutoMapper(typeof(MapperProfile).Assembly);
 
         builder.Services.AddScoped<UserService>();
         builder.Services.AddScoped<AuthService>();
         builder.Services.AddScoped<PostService>();
         builder.Services.AddScoped<LinkGeneratorService>();
-        builder.Services.AddSingleton<DdosGuard>();
+        builder.Services.AddScoped<CommentService>();
+        builder.Services.AddScoped<LikeService>();
 
         builder.Services.AddAuthentication(o =>
         {
@@ -125,16 +133,12 @@ internal class Program
         }
 
         app.UseHttpsRedirection();
-
-        app.UseAntiDdosCustom();
         app.UseAuthentication();
+        app.UseClientRateLimiting();
         app.UseAuthorization();
-
         app.UseTokenValidator();
         app.UseGlobalErrorWrapper();
-
         app.MapControllers();
-
         app.Run();
     }
 }

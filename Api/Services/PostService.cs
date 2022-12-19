@@ -54,11 +54,9 @@ namespace Api.Services
         {
             var posts = await _context.Posts
                 .Include(x => x.Author).ThenInclude(x => x.Avatar)
-                .Include(x => x.PostContents)
-                .AsNoTracking()
-                .OrderByDescending(x => x.Created)
-                .Skip(skip)
-                .Take(take)
+                .Include(x => x.Likes!).ThenInclude(x => x.Author).ThenInclude(x => x.Avatar)
+                .Include(x => x.PostComments!).ThenInclude(x => x.Author)
+                .Include(x => x.PostContents).AsNoTracking().OrderByDescending(x => x.Created).Skip(skip).Take(take)
                 .Select(x => _mapper.Map<PostModel>(x))
                 .ToListAsync();
 
@@ -69,6 +67,8 @@ namespace Api.Services
         {
             var post = await _context.Posts
                 .Include(x => x.Author).ThenInclude(x => x.Avatar)
+                .Include(x => x.PostComments!).ThenInclude(x => x.Author)
+                .Include(x => x.Likes!).ThenInclude(x => x.Author)
                 .Include(x => x.PostContents)
                 .AsNoTracking()
                 .Where(x => x.Id == id)

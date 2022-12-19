@@ -22,4 +22,20 @@
         }
     }
 
+    public class CommentNotFoundException : NotFoundException
+    {
+        public CommentNotFoundException()
+        {
+            Model = "Comment";
+        }
+    }
+
+    public class TargetNotFoundException : NotFoundException
+    {
+        public TargetNotFoundException()
+        {
+            Model = "Target";
+        }
+    }
+
 }

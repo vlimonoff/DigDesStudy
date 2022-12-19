@@ -40,5 +40,8 @@ namespace DAL
         public DbSet<Avatar> Avatars => Set<Avatar>();
         public DbSet<Post> Posts => Set<Post>();
         public DbSet<PostContent> PostContents => Set<PostContent>();
+        public DbSet<Comment> Comments => Set<Comment>();
+        public DbSet<CommentReply> CommentReplies => Set<CommentReply>();
+        public DbSet<Like> Likes => Set<Like>();
     }
 }

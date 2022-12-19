@@ -1,6 +1,5 @@
 ﻿using Api.Models.Attach;
-using Api.Models.User;
-using DAL.Entities;
+
 
 namespace Api.Models.Post
 {

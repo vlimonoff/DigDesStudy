@@ -22,8 +22,19 @@ namespace Api.Controllers
         }
 
         [HttpPost]
-        public async Task<TokenModel> Token(TokenRequestModel model) 
-            => await _authService.GetToken(model.Login, model.Pass);
+        public async Task<TokenModel> Token(TokenRequestModel model)
+        {
+            try
+            {
+                var token =  await _authService.GetToken(model.Login, model.Pass);
+                return token;
+            }
+            catch (Exception)
+            {
+                throw new HttpRequestException("not authorize", null, statusCode: System.Net.HttpStatusCode.Unauthorized);
+            }
+            
+        }
 
         [HttpPost]
         public async Task<TokenModel> RefreshToken(RefreshTokenRequestModel model) 

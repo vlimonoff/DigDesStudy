@@ -13,6 +13,8 @@ namespace Api.Models.Post
         public List<LikeModel>? Likes { get; set; } = new List<LikeModel>();
         public List<CommentModel>? Comments { get; set; } = new List<CommentModel>();
         public List<AttachExternalModel>? Contents { get; set; } = new List<AttachExternalModel>();
+        public DateTimeOffset Created { get; set; }
+
 
         public int CommentsCount { get; set; }
         public int LikesCount { get; set; }
